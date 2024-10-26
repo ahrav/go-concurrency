@@ -526,7 +526,7 @@ func TestPipelineCompositionII(t *testing.T) {
 	})
 }
 
-func TestComposedPipeline(t *testing.T) {
+func TestComposedPipelineFanOutIn(t *testing.T) {
 	done := make(chan struct{})
 	defer close(done)
 

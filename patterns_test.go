@@ -288,3 +288,117 @@ func TestTee(t *testing.T) {
 		}
 	})
 }
+func TestBridge(t *testing.T) {
+	t.Run("single channel in stream", func(t *testing.T) {
+		done := make(chan struct{})
+		chanStream := make(chan (<-chan int))
+		stream := make(chan int)
+
+		go func() {
+			chanStream <- stream
+			close(stream)
+			close(chanStream)
+		}()
+
+		result := bridge(done, chanStream)
+
+		count := 0
+		for range result {
+			count++
+		}
+
+		if count != 0 {
+			t.Errorf("expected 0 values from empty stream, got %d", count)
+		}
+	})
+
+	t.Run("multiple channels with values", func(t *testing.T) {
+		done := make(chan struct{})
+		chanStream := make(chan (<-chan int))
+
+		go func() {
+			stream1 := make(chan int)
+			stream2 := make(chan int)
+
+			go func() {
+				stream1 <- 1
+				close(stream1)
+			}()
+
+			go func() {
+				stream2 <- 2
+				close(stream2)
+			}()
+
+			chanStream <- stream1
+			chanStream <- stream2
+			close(chanStream)
+		}()
+
+		result := bridge(done, chanStream)
+
+		values := make([]int, 0)
+		for v := range result {
+			values = append(values, v)
+		}
+
+		if len(values) != 2 || values[0] != 1 || values[1] != 2 {
+			t.Errorf("expected [1 2], got %v", values)
+		}
+	})
+
+	t.Run("done cancels before processing all channels", func(t *testing.T) {
+		done := make(chan struct{})
+		chanStream := make(chan (<-chan int))
+
+		go func() {
+			stream1 := make(chan int)
+			stream2 := make(chan int)
+
+			go func() {
+				stream1 <- 1
+				close(stream1)
+			}()
+
+			chanStream <- stream1
+			chanStream <- stream2
+			close(done)
+			stream2 <- 2
+			close(stream2)
+			close(chanStream)
+		}()
+
+		result := bridge(done, chanStream)
+
+		count := 0
+		for range result {
+			count++
+		}
+
+		if count > 1 {
+			t.Errorf("expected at most 1 value after done signal, got %d", count)
+		}
+	})
+
+	t.Run("empty chanStream", func(t *testing.T) {
+		done := make(chan struct{})
+		chanStream := make(chan (<-chan int))
+
+		go func() {
+			close(chanStream)
+		}()
+
+		result := bridge(done, chanStream)
+
+		count := 0
+		for range result {
+			count++
+		}
+
+		if count != 0 {
+			t.Errorf("expected 0 values from empty chanStream, got %d", count)
+		}
+	})
+
+	// TODO: Handle nil streams?
+}

@@ -172,3 +172,68 @@ func tee[T any](done <-chan struct{}, in <-chan T) (_, _ <-chan T) {
 	}()
 	return out1, out2
 }
+
+// bridge converts a channel of channels into a single channel that outputs all values
+// from each inner channel sequentially. This pattern is useful when you need to consume
+// values from a sequence of channels in order, effectively "flattening" a stream of streams.
+// The bridge pattern automatically switches to reading from the next channel when the current
+// channel is exhausted.
+//
+// Example:
+//
+//	done := make(chan struct{})
+//	defer close(done)
+//
+//	// Create a stream of channels
+//	chanStream := make(chan (<-chan int))
+//	go func() {
+//		defer close(chanStream)
+//
+//		// Send some channels with values
+//		c1 := make(chan int)
+//		go func() {
+//			defer close(c1)
+//			c1 <- 1
+//			c1 <- 2
+//		}()
+//		chanStream <- c1
+//
+//		c2 := make(chan int)
+//		go func() {
+//			defer close(c2)
+//			c2 <- 3
+//			c2 <- 4
+//		}()
+//		chanStream <- c2
+//	}()
+//
+//	// Bridge will read values: 1, 2, 3, 4
+//	for val := range bridge(done, chanStream) {
+//		fmt.Printf("%d ", val)
+//	}
+//	// Output: 1 2 3 4
+func bridge[T any](done <-chan struct{}, chanStream <-chan <-chan T) <-chan T {
+	valStream := make(chan T)
+	go func() {
+		defer close(valStream)
+		for {
+			var stream <-chan T
+			select {
+			case maybeStream, ok := <-chanStream:
+				if !ok {
+					return
+				}
+				stream = maybeStream
+			case <-done:
+				return
+			}
+			for val := range orDone(done, stream) {
+				select {
+				case valStream <- val:
+				case <-done:
+				}
+			}
+		}
+	}()
+	return valStream
+}

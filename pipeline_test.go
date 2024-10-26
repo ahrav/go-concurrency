@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math/rand"
 	"testing"
 	"time"
 )
@@ -523,4 +524,36 @@ func TestPipelineCompositionII(t *testing.T) {
 			i++
 		}
 	})
+}
+
+func TestComposedPipeline(t *testing.T) {
+	done := make(chan struct{})
+	defer close(done)
+
+	randFn := func() any { return rand.Intn(50_000_000) }
+
+	randStream := toInt(done, repeatFn(done, randFn))
+
+	// Create multiple prime finder workers.
+	numWorkers := 3
+	finders := make([]<-chan any, numWorkers)
+	for i := 0; i < numWorkers; i++ {
+		finders[i] = primeFinder(done, randStream)
+	}
+
+	// Fan-in the results and take first 10 primes.
+	primes := take(done, fanIn(done, finders...), 10)
+
+	// Verify we got 10 prime numbers.
+	count := 0
+	for prime := range primes {
+		count++
+		if p, ok := prime.(int); ok {
+			t.Logf("Found prime: %d", p)
+		}
+	}
+
+	if count != 10 {
+		t.Errorf("Expected 10 primes, got %d", count)
+	}
 }

@@ -1,5 +1,7 @@
 package main
 
+import "sync"
+
 // generator is a generic function that takes a done channel and a values channel as input,
 // and returns a channel that streams the values from the values channel until the
 // done channel is closed.
@@ -166,4 +168,72 @@ func take[T any](done <-chan struct{}, valueStream <-chan T, num int) <-chan T {
 		}
 	}()
 	return takeStream
+}
+
+func toInt(done <-chan struct{}, valueStream <-chan any) <-chan int {
+	intStream := make(chan int)
+	go func() {
+		defer close(intStream)
+		for v := range valueStream {
+			select {
+			case <-done:
+				return
+			case intStream <- v.(int):
+			}
+		}
+	}()
+	return intStream
+}
+
+func primeFinder(done <-chan struct{}, valueStream <-chan int) <-chan any {
+	isPrime := func(value int) bool {
+		for i := 2; i < value; i++ {
+			if value%i == 0 {
+				return false
+			}
+		}
+		return value > 1
+	}
+
+	primeStream := make(chan any)
+	go func() {
+		defer close(primeStream)
+		for v := range valueStream {
+			if isPrime(v) {
+				select {
+				case <-done:
+					return
+				case primeStream <- v:
+				}
+			}
+		}
+	}()
+	return primeStream
+}
+
+func fanIn[T any](done <-chan struct{}, channels ...<-chan T) <-chan T {
+	var wg sync.WaitGroup
+	multiplexedStream := make(chan T)
+	multiplex := func(c <-chan T) {
+		defer wg.Done()
+		for i := range c {
+			select {
+			case <-done:
+				return
+			case multiplexedStream <- i:
+			}
+		}
+	}
+
+	wg.Add(len(channels))
+	for _, c := range channels {
+		go multiplex(c)
+	}
+
+	go func() {
+		wg.Wait()
+		close(multiplexedStream)
+	}()
+
+	return multiplexedStream
 }

@@ -23,11 +23,11 @@ For example, the Tee pattern uses Or-Channel internally for cancellation handlin
 
 
 ### Core Patterns
-- **Tee**: Split values from a channel into multiple destinations
-- **Bridge**: Consume values from a sequence of channels
-- **Fan-Out/Fan-In**: Distribute work and collect results
 - **Or-Channel**: Combine multiple done channels into a single done channel
 - **Pipeline**: Chain together multiple processing steps
+- **Fan-Out/Fan-In**: Distribute work and collect results
+- **Tee**: Split values from a channel into multiple destinations
+- **Bridge**: Consume values from a sequence of channels
 - **Error Groups**: Handle errors across multiple goroutines (TODO)
 
 ### Advanced Techniques

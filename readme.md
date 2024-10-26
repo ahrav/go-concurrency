@@ -17,6 +17,10 @@ They are NOT distributed systems patterns. If you're looking for distributed pat
 check out resources on distributed systems with Go instead.
 
 ## 🧪 Patterns Explored
+The patterns are organized in rough order of complexity - later patterns often build upon
+and combine earlier patterns.
+For example, the Tee pattern uses Or-Channel internally for cancellation handling.
+
 
 ### Core Patterns
 - **Tee**: Split values from a channel into multiple destinations

@@ -205,6 +205,7 @@ func toInt(done <-chan struct{}, valueStream <-chan any) <-chan int {
 //
 // Returns:
 // - A read-only channel of type any that streams the prime numbers until the done channel is closed.
+// NOTE: This is NOT a pattern, this is just a helper function.
 func primeFinder(done <-chan struct{}, valueStream <-chan int) <-chan any {
 	isPrime := func(value int) bool {
 		for i := 2; i < value; i++ {

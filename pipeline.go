@@ -170,6 +170,16 @@ func take[T any](done <-chan struct{}, valueStream <-chan T, num int) <-chan T {
 	return takeStream
 }
 
+// toInt converts a stream of values of any type to a stream of integers.
+// It reads values from the input channel, converts them to integers, and streams them
+// until the done channel is closed.
+//
+// Parameters:
+// - done: A read-only channel of type struct{} used to signal when to stop streaming values.
+// - valueStream: A read-only channel of type any from which values are read and converted to integers.
+//
+// Returns:
+// - A read-only channel of type int that streams the converted integer values until the done channel is closed.
 func toInt(done <-chan struct{}, valueStream <-chan any) <-chan int {
 	intStream := make(chan int)
 	go func() {
@@ -185,6 +195,16 @@ func toInt(done <-chan struct{}, valueStream <-chan any) <-chan int {
 	return intStream
 }
 
+// primeFinder filters a stream of integers, returning only the prime numbers.
+// It reads values from the input channel, checks if they are prime, and streams the prime numbers
+// until the done channel is closed.
+//
+// Parameters:
+// - done: A read-only channel of type struct{} used to signal when to stop streaming values.
+// - valueStream: A read-only channel of type int from which values are read and checked for primality.
+//
+// Returns:
+// - A read-only channel of type any that streams the prime numbers until the done channel is closed.
 func primeFinder(done <-chan struct{}, valueStream <-chan int) <-chan any {
 	isPrime := func(value int) bool {
 		for i := 2; i < value; i++ {
@@ -211,6 +231,16 @@ func primeFinder(done <-chan struct{}, valueStream <-chan int) <-chan any {
 	return primeStream
 }
 
+// fanIn multiplexes multiple input channels into a single output channel.
+// It reads values from the input channels and streams them into a single output channel
+// until the done channel is closed.
+//
+// Parameters:
+// - done: A read-only channel of type struct{} used to signal when to stop streaming values.
+// - channels: A variadic list of read-only channels of type T from which values are read and multiplexed.
+//
+// Returns:
+// - A read-only channel of type T that streams the multiplexed values from the input channels until the done channel is closed.
 func fanIn[T any](done <-chan struct{}, channels ...<-chan T) <-chan T {
 	var wg sync.WaitGroup
 	multiplexedStream := make(chan T)

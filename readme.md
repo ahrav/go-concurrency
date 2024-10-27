@@ -31,7 +31,7 @@ For example, the Tee pattern uses Or-Channel internally for cancellation handlin
 - **Error Groups**: Handle errors across multiple goroutines (TODO)
 
 ### Advanced Techniques
-- **Heartbeat**: Monitor goroutine health in production systems (TODO)
+- **Heartbeat**: Monitor goroutine health in production systems
 - **Replicated Requests**: Manage redundant requests for reliability (TODO)
 - **Rate Limiting**: Control resource consumption (TODO)
 - **Self-Healing**: Implement goroutines that recover from failures (TODO)

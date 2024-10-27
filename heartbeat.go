@@ -101,14 +101,14 @@ func doWorkWithHeartbeat[T any](
 		// Launch work in separate goroutine to prevent blocking heartbeats.
 		workComplete := make(chan Result[T])
 		go func() {
+			defer close(workComplete)
 			// Create a new done channel specific to this work.
 			workDone := make(chan struct{})
 			go func() {
 				select {
 				case <-done:
 					close(workDone)
-				case <-workComplete:
-					// Work completed normally
+				default:
 				}
 			}()
 

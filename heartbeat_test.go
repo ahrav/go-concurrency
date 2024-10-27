@@ -78,9 +78,13 @@ func TestDoWorkWithHeartbeat(t *testing.T) {
 		timeout := time.After(200 * time.Millisecond)
 		select {
 		case <-heartbeat:
-		case <-results:
-			t.Error("should not receive result after cancellation")
+			// Heartbeat received as expected
+		case result, ok := <-results:
+			if ok {
+				t.Errorf("expected results channel to be closed, but received: %+v", result)
+			}
 		case <-timeout:
+			t.Error("timeout reached without receiving expected signals")
 		}
 	})
 

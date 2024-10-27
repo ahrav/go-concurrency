@@ -98,17 +98,40 @@ func doWorkWithHeartbeat[T any](
 			}
 		}
 
-		// Main loop that performs the work and sends heartbeat signals.
+		// Launch work in separate goroutine to prevent blocking heartbeats.
+		workComplete := make(chan Result[T])
+		go func() {
+			// Create a new done channel specific to this work.
+			workDone := make(chan struct{})
+			go func() {
+				select {
+				case <-done:
+					close(workDone)
+				case <-workComplete:
+					// Work completed normally
+				}
+			}()
+
+			select {
+			case <-workDone:
+				return
+			case workComplete <- func() Result[T] {
+				val, err := workFn()
+				return Result[T]{Value: val, Error: err}
+			}():
+			}
+		}()
+
+		// Main loop that handles heartbeats and work completion.
 		for {
 			select {
 			case <-done:
 				return
 			case <-pulse:
 				sendPulse()
-			default:
-				// Execute the actual work.
-				val, err := workFn()
-				sendResult(Result[T]{Value: val, Error: err})
+			case result := <-workComplete:
+				sendResult(result)
+				return
 			}
 		}
 	}()

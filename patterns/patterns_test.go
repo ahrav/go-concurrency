@@ -1,4 +1,4 @@
-package main
+package patterns
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 
 func TestOr(t *testing.T) {
 	t.Run("empty channels", func(t *testing.T) {
-		result := or()
+		result := Or()
 		if result != nil {
 			t.Error("expected nil for empty channels")
 		}
@@ -15,7 +15,7 @@ func TestOr(t *testing.T) {
 
 	t.Run("single channel", func(t *testing.T) {
 		ch := make(chan any)
-		result := or(ch)
+		result := Or(ch)
 		if result != ch {
 			t.Error("expected same channel to be returned for single input")
 		}
@@ -24,7 +24,7 @@ func TestOr(t *testing.T) {
 	t.Run("two channels - first signals", func(t *testing.T) {
 		ch1 := make(chan any)
 		ch2 := make(chan any)
-		result := or(ch1, ch2)
+		result := Or(ch1, ch2)
 
 		go func() {
 			close(ch1)
@@ -40,7 +40,7 @@ func TestOr(t *testing.T) {
 	t.Run("two channels - second signals", func(t *testing.T) {
 		ch1 := make(chan any)
 		ch2 := make(chan any)
-		result := or(ch1, ch2)
+		result := Or(ch1, ch2)
 
 		go func() {
 			close(ch2)
@@ -58,7 +58,7 @@ func TestOr(t *testing.T) {
 		ch2 := make(chan any)
 		ch3 := make(chan any)
 		ch4 := make(chan any)
-		result := or(ch1, ch2, ch3, ch4)
+		result := Or(ch1, ch2, ch3, ch4)
 
 		go func() {
 			close(ch2)
@@ -76,7 +76,7 @@ func TestOr(t *testing.T) {
 		ch2 := make(chan any)
 		ch3 := make(chan any)
 		ch4 := make(chan any)
-		result := or(ch1, ch2, ch3, ch4)
+		result := Or(ch1, ch2, ch3, ch4)
 
 		go func() {
 			close(ch4)
@@ -93,7 +93,7 @@ func TestOrDone(t *testing.T) {
 	t.Run("stream closes before done", func(t *testing.T) {
 		done := make(chan struct{})
 		stream := make(chan int)
-		result := orDone(done, stream)
+		result := OrDone(done, stream)
 
 		go func() {
 			stream <- 1
@@ -114,7 +114,7 @@ func TestOrDone(t *testing.T) {
 	t.Run("done closes before stream", func(t *testing.T) {
 		done := make(chan struct{})
 		stream := make(chan int)
-		result := orDone(done, stream)
+		result := OrDone(done, stream)
 
 		go func() {
 			stream <- 1
@@ -136,7 +136,7 @@ func TestOrDone(t *testing.T) {
 	t.Run("done closes while sending to valStream", func(t *testing.T) {
 		done := make(chan struct{})
 		stream := make(chan int)
-		result := orDone(done, stream)
+		result := OrDone(done, stream)
 
 		go func() {
 			stream <- 1
@@ -159,7 +159,7 @@ func TestOrDone(t *testing.T) {
 	t.Run("nil stream", func(t *testing.T) {
 		done := make(chan struct{})
 		var stream chan int
-		result := orDone(done, stream)
+		result := OrDone(done, stream)
 
 		go func() {
 			time.Sleep(50 * time.Millisecond)
@@ -300,7 +300,7 @@ func TestBridge(t *testing.T) {
 			close(chanStream)
 		}()
 
-		result := bridge(done, chanStream)
+		result := Bridge(done, chanStream)
 
 		count := 0
 		for range result {
@@ -335,7 +335,7 @@ func TestBridge(t *testing.T) {
 			close(chanStream)
 		}()
 
-		result := bridge(done, chanStream)
+		result := Bridge(done, chanStream)
 
 		values := make([]int, 0)
 		for v := range result {
@@ -368,7 +368,7 @@ func TestBridge(t *testing.T) {
 			close(chanStream)
 		}()
 
-		result := bridge(done, chanStream)
+		result := Bridge(done, chanStream)
 
 		count := 0
 		for range result {
@@ -388,7 +388,7 @@ func TestBridge(t *testing.T) {
 			close(chanStream)
 		}()
 
-		result := bridge(done, chanStream)
+		result := Bridge(done, chanStream)
 
 		count := 0
 		for range result {

@@ -1,7 +1,7 @@
-package main
+package patterns
 
-// or takes a variadic number of channels and returns a single channel that will
-// close when any one of the input channels receives a value or closes.
+// Or takes a variadic number of channels and returns a single channel that will
+// close when any one of the input channels receives a value Or closes.
 // This pattern is useful when you want to wait for any one of a set of operations to complete,
 // and making sure that you don't leak resources by waiting for all operations to complete.
 //
@@ -18,7 +18,7 @@ package main
 //
 //	start := time.Now()
 //
-//	<-or(
+//	<-Or(
 //		signal(2*time.Second),
 //		signal(5*time.Second),
 //		signal(1*time.Second),
@@ -26,7 +26,7 @@ package main
 //	)
 //
 //	fmt.Printf("done after %v", time.Since(start)) // done after 1.000..s
-func or(channels ...<-chan any) <-chan any {
+func Or(channels ...<-chan any) <-chan any {
 	switch len(channels) {
 	case 0:
 		return nil
@@ -53,16 +53,16 @@ func or(channels ...<-chan any) <-chan any {
 			case <-channels[0]:
 			case <-channels[1]:
 			case <-channels[2]:
-			case <-or(append(channels[3:], orDone)...): // Recursive call for remaining channels
+			case <-Or(append(channels[3:], orDone)...): // Recursive call for remaining channels
 			}
 		}
 	}()
 	return orDone
 }
 
-// orDone wraps a channel of type T with a done channel to enable cancellation.
+// OrDone wraps a channel of type T with a done channel to enable cancellation.
 // It returns a new channel that will receive all values from the input stream
-// until either the stream closes, or the done channel is signaled.
+// until either the stream closes, Or the done channel is signaled.
 // This pattern is useful for gracefully canceling channel operations
 // and preventing goroutine leaks.
 // This reduces the complexity at the call site and makes it easier to reason about.
@@ -80,15 +80,15 @@ func or(channels ...<-chan any) <-chan any {
 //		}
 //	}()
 //
-//	// Use orDone to handle values with cancellation
-//	for val := range orDone(done, nums) {
+//	// Use OrDone to handle values with cancellation
+//	for val := range OrDone(done, nums) {
 //		fmt.Println(val)
 //		if val == 3 {
 //			close(done) // Cancel processing after seeing 3
 //			break
 //		}
 //	}
-func orDone[T any](done <-chan struct{}, stream <-chan T) <-chan T {
+func OrDone[T any](done <-chan struct{}, stream <-chan T) <-chan T {
 	valStream := make(chan T)
 	go func() {
 		defer close(valStream)
@@ -155,7 +155,7 @@ func tee[T any](done <-chan struct{}, in <-chan T) (_, _ <-chan T) {
 	go func() {
 		defer close(out1)
 		defer close(out2)
-		for val := range orDone(done, in) {
+		for val := range OrDone(done, in) {
 			// Create local variables to shadow out1 and out2 to avoid blocking.
 			// This ensures that each select case only attempts to send to each channel once.
 			var out1, out2 = out1, out2
@@ -173,10 +173,10 @@ func tee[T any](done <-chan struct{}, in <-chan T) (_, _ <-chan T) {
 	return out1, out2
 }
 
-// bridge converts a channel of channels into a single channel that outputs all values
+// Bridge converts a channel of channels into a single channel that outputs all values
 // from each inner channel sequentially. This pattern is useful when you need to consume
 // values from a sequence of channels in order, effectively "flattening" a stream of streams.
-// The bridge pattern automatically switches to reading from the next channel when the current
+// The Bridge pattern automatically switches to reading from the next channel when the current
 // channel is exhausted.
 //
 // Example:
@@ -208,11 +208,11 @@ func tee[T any](done <-chan struct{}, in <-chan T) (_, _ <-chan T) {
 //	}()
 //
 //	// Bridge will read values: 1, 2, 3, 4
-//	for val := range bridge(done, chanStream) {
+//	for val := range Bridge(done, chanStream) {
 //		fmt.Printf("%d ", val)
 //	}
 //	// Output: 1 2 3 4
-func bridge[T any](done <-chan struct{}, chanStream <-chan <-chan T) <-chan T {
+func Bridge[T any](done <-chan struct{}, chanStream <-chan <-chan T) <-chan T {
 	valStream := make(chan T)
 	go func() {
 		defer close(valStream)
@@ -227,7 +227,7 @@ func bridge[T any](done <-chan struct{}, chanStream <-chan <-chan T) <-chan T {
 			case <-done:
 				return
 			}
-			for val := range orDone(done, stream) {
+			for val := range OrDone(done, stream) {
 				select {
 				case valStream <- val:
 				case <-done:

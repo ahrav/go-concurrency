@@ -3,7 +3,7 @@ package heartbeat
 import (
 	"time"
 
-	"github.com/ahrav/go-concurrency"
+	"github.com/ahrav/go-concurrency/patterns"
 )
 
 // Result is a generic struct that holds a value of any type and an error.
@@ -189,7 +189,7 @@ func doStreamWorkWithHeartbeatPerUnitOfWork[T any, R any](
 		defer close(heartbeatStream)
 		defer close(rsultsStream)
 
-		for val := range main.orDone(done, inStream) {
+		for val := range patterns.OrDone(done, inStream) {
 			workComplete := make(chan Result[R])
 
 			go func(v T) {
@@ -223,7 +223,7 @@ func doStreamWorkWithHeartbeatPerUnitOfWork[T any, R any](
 	return heartbeatStream, rsultsStream
 }
 
-// doStreamWorkWithHeartbeatContinuous performs work on a stream of inputs with continuous
+// DoStreamWorkWithHeartbeatContinuous performs work on a stream of inputs with continuous
 // heartbeat signals throughout the entire processing of each work item.
 //
 // Parameters:
@@ -258,13 +258,13 @@ func doStreamWorkWithHeartbeatPerUnitOfWork[T any, R any](
 //		return fmt.Sprintf("processed %d", i), nil
 //	}
 //
-//	heartbeat, results := doStreamWorkWithHeartbeatContinuous[int, string](
+//	heartbeat, results := DoStreamWorkWithHeartbeatContinuous[int, string](
 //		done,
 //		100*time.Millisecond,
 //		inputs,
 //		workFn,
 //	)
-func doStreamWorkWithHeartbeatContinuous[T any, R any](
+func DoStreamWorkWithHeartbeatContinuous[T any, R any](
 	done <-chan struct{},
 	pulseInterval time.Duration,
 	inStream <-chan T,
@@ -301,7 +301,7 @@ func doStreamWorkWithHeartbeatContinuous[T any, R any](
 		}
 
 	nextValue:
-		for val := range main.orDone(done, inStream) {
+		for val := range patterns.OrDone(done, inStream) {
 			workComplete := make(chan Result[R])
 
 			// Launch work in separate goroutine.

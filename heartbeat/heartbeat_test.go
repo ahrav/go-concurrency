@@ -176,7 +176,7 @@ func TestDoStreamWorkWithHeartbeatContinuous(t *testing.T) {
 			return s + "_processed", nil
 		}
 
-		heartbeat, results := doStreamWorkWithHeartbeatContinuous[string, string](done, 50*time.Millisecond, inputs, workFn)
+		heartbeat, results := DoStreamWorkWithHeartbeatContinuous[string, string](done, 50*time.Millisecond, inputs, workFn)
 
 		timeout := time.After(400 * time.Millisecond)
 		resultReceived := false
@@ -221,7 +221,7 @@ func TestDoStreamWorkWithHeartbeatContinuous(t *testing.T) {
 
 		workFn := func(i int) (int, error) { return 0, expectedErr }
 
-		_, results := doStreamWorkWithHeartbeatContinuous[int, int](done, 50*time.Millisecond, inputs, workFn)
+		_, results := DoStreamWorkWithHeartbeatContinuous[int, int](done, 50*time.Millisecond, inputs, workFn)
 
 		select {
 		case result := <-results:
@@ -240,7 +240,7 @@ func TestDoStreamWorkWithHeartbeatContinuous(t *testing.T) {
 
 		workFn := func(i int) (int, error) { return i * 2, nil }
 
-		heartbeat, results := doStreamWorkWithHeartbeatContinuous[int, int](done, 50*time.Millisecond, inputs, workFn)
+		heartbeat, results := DoStreamWorkWithHeartbeatContinuous[int, int](done, 50*time.Millisecond, inputs, workFn)
 
 		select {
 		case _, ok := <-results:

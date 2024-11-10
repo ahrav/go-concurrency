@@ -1,6 +1,10 @@
-package main
+package heartbeat
 
-import "time"
+import (
+	"time"
+
+	"github.com/ahrav/go-concurrency"
+)
 
 // Result is a generic struct that holds a value of any type and an error.
 //
@@ -185,7 +189,7 @@ func doStreamWorkWithHeartbeatPerUnitOfWork[T any, R any](
 		defer close(heartbeatStream)
 		defer close(rsultsStream)
 
-		for val := range orDone(done, inStream) {
+		for val := range main.orDone(done, inStream) {
 			workComplete := make(chan Result[R])
 
 			go func(v T) {
@@ -297,7 +301,7 @@ func doStreamWorkWithHeartbeatContinuous[T any, R any](
 		}
 
 	nextValue:
-		for val := range orDone(done, inStream) {
+		for val := range main.orDone(done, inStream) {
 			workComplete := make(chan Result[R])
 
 			// Launch work in separate goroutine.
